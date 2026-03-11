@@ -9,7 +9,7 @@ MAKE_ARGS="O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- C
 
 echo "Building a configuration for Dizi (GKI + Vendor)..."
 make $MAKE_ARGS gki_defconfig vendor/dizi_GKI.config
-make $MAKE_ARGS olddefconfigч
+make $MAKE_ARGS olddefconfig
 
 CLANG_FLAGS="-Wno-error=frame-larger-than= -Wno-error=shift-count-overflow -Wno-unused-function"
 
