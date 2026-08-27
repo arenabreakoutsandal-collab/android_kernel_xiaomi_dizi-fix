@@ -10,6 +10,12 @@ jobs:
     - name: Checkout kernel source
       uses: actions/checkout@v4
 
+    - name: Check kernel config
+   run: | 
+    echo "=== kernel.config ==="
+    grep -E 'CONFIG_(TRIM_UNUSED_KSYMS|UNUSED_KSYMS|MODVERSIONS|MODULES)=' kernel.config || true
+    
+
     - name: Set up MemKernel as a module (M-OUT) with specified name
       run: |
         curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M memkernel
