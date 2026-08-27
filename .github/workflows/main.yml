@@ -1,4 +1,4 @@
-name: Build MemKernel LKM
+name: Kernel Build
 
 on:
   workflow_dispatch:
@@ -6,41 +6,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout kernel source
-        uses: actions/checkout@v4
+    - name: Checkout kernel source
+      uses: actions/checkout@v4
 
-      - name: Set up MemKernel as a module
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M sandal
+    - name: Set up MemKernel as a module (M-OUT) with specified name
+      run: |
+        curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M sandal
+        
+    - name: Android kernel build
+      uses: lemniskett/android-kernel-actions@master
+      id: build
+      env:
+        NAME: Dizi
+      with:
+        arch: arm64
+        compiler: gcc/12
+        defconfig: dizi_defconfig
+        image: Image.gz-dtb
 
-      - name: Install ARM64 toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-12-aarch64-linux-gnu
-
-      - name: Generate kernel config
-        run: |
-          make O=out ARCH=arm64 dizi_defconfig
-
-      - name: Build MemKernel LKM only
-        run: |
-          make -C "$GITHUB_WORKSPACE" \
-            O="$GITHUB_WORKSPACE/out" \
-            ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            M="$GITHUB_WORKSPACE/drivers/memkernel" \
-            modules
-
-      - name: Find module
-        run: |
-          find out -name "memkernel.ko" -print
-
-      - name: Upload MemKernel LKM
-        uses: actions/upload-artifact@v4
-        with:
-          name: memkernel-lkm
-          path: out/**/memkernel.ko
-          if-no-files-found: error
+    - name: Upload Kernel and Module
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: module
+        path: |
+          ${{ steps.build.outputs.outfile }}
+          ./out/drivers/memkernel/memkernel.ko
