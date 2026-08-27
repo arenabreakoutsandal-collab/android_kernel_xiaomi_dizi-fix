@@ -6,35 +6,77 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-- name: Checkout kernel source
-  uses: actions/checkout@v4
+    - name: Checkout kernel source
+      uses: actions/checkout@v4
 
-- name: Check kernel config
-  run: |
-    echo "=== kernel.config ==="
-    grep -E 'CONFIG_(TRIM_UNUSED_KSYMS|UNUSED_KSYMS|MODVERSIONS|MODULES)=' kernel.config || true
+    - name: Check dizi_defconfig
+      run: |
+        echo "========================================"
+        echo "Checking dizi_defconfig"
+        echo "========================================"
 
-- name: Set up MemKernel as a module
-  run: |
-    curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M
+        if [ ! -f dizi_defconfig ]; then
+          echo "ERROR: dizi_defconfig not found!"
+          exit 1
+        fi
 
-- name: Android kernel build
-  uses: lemniskett/android-kernel-actions@master
-  id: build
-  env:
-    NAME: dizi
-  with:
-    arch: arm64
-    compiler: gcc/12
-    defconfig: dizi_defconfig
-    image: Image.gz-dtb
+        echo ""
+        echo "=== dizi_defconfig options ==="
+        grep -E 'CONFIG_(TRIM_UNUSED_KSYMS|UNUSED_KSYMS|MODVERSIONS|MODULES)=' dizi_defconfig || true
 
+        echo ""
+        echo "=== Kernel version ==="
+        grep '^CONFIG_LOCALVERSION=' dizi_defconfig || true
+        grep '^CONFIG_LOCALVERSION_AUTO=' dizi_defconfig || true
+
+        echo ""
+        echo "=== KernelSU / SUSFS ==="
+        grep -E 'CONFIG_(KSU|KSU_SUSFS|SUSFS)' dizi_defconfig || true
+
+        echo ""
+        echo "========================================"
+        echo "Config check finished"
+        echo "========================================"
+
+    - name: Set up MemKernel as a module
+      run: |
+        curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M
+
+    - name: Android kernel build
+      uses: lemniskett/android-kernel-actions@master
+      id: build
+      env:
+        NAME: dizi
+      with:
+        arch: arm64
+        compiler: gcc/12
+        defconfig: dizi_defconfig
+        image: Image.gz-dtb
+
+    - name: Check build output
+      if: always()
+      run: |
+        echo "=== Output directory ==="
+        ls -lah out/ || true
+
+        echo ""
+        echo "=== MemKernel ==="
+        find out -name "memkernel.ko" -print || true
+
+        echo ""
+        echo "=== Generated config ==="
+        if [ -f out/.config ]; then
+          grep -E 'CONFIG_(TRIM_UNUSED_KSYMS|UNUSED_KSYMS|MODVERSIONS|MODULES)=' out/.config || true
+        fi
 
     - name: Upload Kernel and Module
+      if: success()
       uses: actions/upload-artifact@v7.0.1
       with:
-        name: module
+        name: dizi-kernel
         path: |
           ${{ steps.build.outputs.outfile }}
           ./out/drivers/memkernel/memkernel.ko
+          
