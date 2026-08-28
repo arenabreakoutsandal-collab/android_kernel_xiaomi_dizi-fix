@@ -21,8 +21,8 @@ jobs:
         NAME: Aandal
       with:
         arch: arm64
-        compiler: clang/15
-        defconfig: gki_defconfig
+        compiler: clang/12
+        defconfig: dizi_defconfig
         image: Image.gz-dtb
 
     - name: Upload Kernel and Module
