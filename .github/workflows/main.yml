@@ -21,7 +21,7 @@ jobs:
         NAME: Aandal
       with:
         arch: arm64
-        compiler: gcc/10
+        compiler: clang/15
         defconfig: gki_defconfig
         image: Image.gz-dtb
 
