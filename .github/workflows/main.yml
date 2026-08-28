@@ -30,6 +30,14 @@ jobs:
         } >> "$DEFCONFIG"
         cat "$DEFCONFIG" | grep -E "UNUSED_SYMBOLS|TRIM_UNUSED_KSYMS"
 
+    - name: Fix unused label in bootconfig.c
+      run: |
+        FILE="fs/proc/bootconfig.c"
+        sed -n '138,146p' "$FILE"
+        sed -i '142s/^\s*skip:;\s*$//' "$FILE"
+        echo "--- after ---"
+        sed -n '138,146p' "$FILE"
+
     - name: Android kernel build
       uses: lemniskett/android-kernel-actions@master
       id: build
