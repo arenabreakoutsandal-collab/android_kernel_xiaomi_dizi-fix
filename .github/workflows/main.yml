@@ -9,58 +9,24 @@ jobs:
     steps:
     - name: Checkout kernel source
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Set up MemKernel as a module (M-OUT) with specified name
       run: |
-        curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M sandal
-
-    - name: Disable KSYM whitelist trimming
-      run: |
-        DEFCONFIG=$(find arch/arm64/configs -name 'dizi_defconfig')
-        if [ -z "$DEFCONFIG" ]; then
-          echo "::error::dizi_defconfig не найден в arch/arm64/configs"
-          exit 1
-        fi
-        echo "Patching $DEFCONFIG"
-        sed -i '/CONFIG_UNUSED_SYMBOLS/d' "$DEFCONFIG"
-        sed -i '/CONFIG_TRIM_UNUSED_KSYMS/d' "$DEFCONFIG"
-        {
-          echo "# CONFIG_UNUSED_SYMBOLS is not set"
-          echo "# CONFIG_TRIM_UNUSED_KSYMS is not set"
-        } >> "$DEFCONFIG"
-        cat "$DEFCONFIG" | grep -E "UNUSED_SYMBOLS|TRIM_UNUSED_KSYMS"
-
-    - name: Fix unused label in bootconfig.c
-      run: |
-        FILE="fs/proc/bootconfig.c"
-        sed -n '138,146p' "$FILE"
-        sed -i '142s/^\s*skip:;\s*$//' "$FILE"
-        echo "--- after ---"
-        sed -n '138,146p' "$FILE"
-
-    - name: Fix format specifier in qcom_sync_file.c
-      run: |
-        FILE="drivers/soc/qcom/sync_fence/qcom_sync_file.c"
-        grep -n "flags:0x%x" "$FILE"
-        sed -i 's/flags:0x%x/flags:0x%lx/' "$FILE"
-        echo "--- after ---"
-        grep -n "flags:0x%lx" "$FILE"
+        curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M
 
     - name: Android kernel build
       uses: lemniskett/android-kernel-actions@master
       id: build
       env:
-        NAME: Dizi
+        NAME: Aandal
       with:
         arch: arm64
-        compiler: gcc/12
-        defconfig: dizi_defconfig
+        compiler: clang/12
+        defconfig: gki_defconfig
         image: Image.gz-dtb
 
     - name: Upload Kernel and Module
-      uses: actions/upload-artifact@v7.0.1
+      uses: actions/upload-artifact@v4
       with:
         name: module
         path: |
