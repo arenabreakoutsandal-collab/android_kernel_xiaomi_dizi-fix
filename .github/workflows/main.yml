@@ -13,7 +13,23 @@ jobs:
     - name: Set up MemKernel as a module (M-OUT) with specified name
       run: |
         curl -LSs "https://raw.githubusercontent.com/Poko-Apps/MemKernel/main/kernel/setup.sh" | bash -s M sandal
-        
+
+    - name: Disable KSYM whitelist trimming
+      run: |
+        DEFCONFIG=$(find arch/arm64/configs -name 'dizi_defconfig')
+        if [ -z "$DEFCONFIG" ]; then
+          echo "::error::dizi_defconfig не найден в arch/arm64/configs"
+          exit 1
+        fi
+        echo "Patching $DEFCONFIG"
+        sed -i '/CONFIG_UNUSED_SYMBOLS/d' "$DEFCONFIG"
+        sed -i '/CONFIG_TRIM_UNUSED_KSYMS/d' "$DEFCONFIG"
+        {
+          echo "# CONFIG_UNUSED_SYMBOLS is not set"
+          echo "# CONFIG_TRIM_UNUSED_KSYMS is not set"
+        } >> "$DEFCONFIG"
+        cat "$DEFCONFIG" | grep -E "UNUSED_SYMBOLS|TRIM_UNUSED_KSYMS"
+
     - name: Android kernel build
       uses: lemniskett/android-kernel-actions@master
       id: build
